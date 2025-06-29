@@ -9,11 +9,28 @@ A retro-style screen recording Chrome Extension — complete with pixel UI, hotk
 
 ## 🧩 Features
 
-- ⏺ Start / stop screen recording with a 3-second countdown
-- 🎞️ Export in **MP4**, **AVI**, **MKV**, **MOV**
-- 🎧 Optionally record microphone audio
-- 🎮 Beautiful **pixel-art UI** using NES.css
-- ⌨️ Use hotkeys for quick control
+- Start / stop screen recording with a 3-second countdown
+- Export in **MP4**, **AVI**, **MKV**, **MOV**
+- Optionally record microphone audio
+- **pixel-art UI** using NES.css
+- Use hotkeys for quick control
+
+---
+
+---
+
+## ⚡ Hotkeys
+
+You can trigger the extension using global shortcuts:
+
+| Action            | Shortcut           |
+|-------------------|--------------------|
+|  open setting     | `Ctrl + Shift + F` |
+| Start Recording   | `Ctrl + Shift + S` |
+| Stop Recording    | `Ctrl + Shift + E` |
+
+Customize hotkeys at:  
+[chrome://extensions/shortcuts](chrome://extensions/shortcuts)
 
 ---
 
@@ -54,31 +71,8 @@ A retro-style screen recording Chrome Extension — complete with pixel UI, hotk
 
 Click the **Options** button from the popup, or visit:
 
-```
-chrome://extensions/?options=<YOUR_EXTENSION_ID>
-```
-
 You can configure:
 
 - **Resolution**: 1080p / 720p / 480p
-- **Audio**: Enable/disable microphone recording
+- **Audio**: Enable/disable sound/microphone recording
 - **Formats**: Choose one or more from MP4, AVI, MKV, MOV
-
----
-
-## ⚡ Hotkeys
-
-You can trigger the extension using global shortcuts:
-
-| Action            | Shortcut           |
-|-------------------|--------------------|
-| Toggle Drawing    | `Ctrl + Shift + Y` |
-| Start Recording   | `Ctrl + Shift + S` |
-| Stop Recording    | `Ctrl + Shift + E` |
-
-Customize hotkeys at:  
-[chrome://extensions/shortcuts](chrome://extensions/shortcuts)
-
----
-
-
