@@ -25,7 +25,7 @@ A retro-style screen recording Chrome Extension — complete with pixel UI, hotk
 
 ## ⚡ Hotkeys
 
-You can trigger the extension using global shortcuts:
+You can use the mouse to trigger the extension, or use hotkeys (recommended).
 
 | Action            | Shortcut           |
 |-------------------|--------------------|
