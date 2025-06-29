@@ -3,7 +3,11 @@
 
 A retro-style screen recording Chrome Extension — complete with pixel UI, hotkeys, and multi-format export via FFmpeg.
 
-![Extension Banner](images/banner.png)
+<p align="center">
+   <img src="assets/option.png" alt="Options UI" width="400"/>
+  <img src="assets/popup.png" alt="Popup UI" width="400"/>
+  
+</p>
 
 ---
 
