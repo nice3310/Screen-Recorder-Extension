@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Options</title>
+
+  <link rel="stylesheet" href="lib/nes.min.css" />
+  <style>
+    body {
+      font-family: "Press Start 2P", monospace, sans-serif;
+      padding: 1.5rem;
+      background: #212529;
+      color: #fff;
+    }
+    label { margin-top: 1rem; display: block; }
+    select { margin-right: .5rem; }
+    .nes-field { margin-top: .5rem; }
+    button { margin-top: 1.5rem; }
+
+    /* Title */
+    .pixel-title {
+      font-size: 1rem;
+      letter-spacing: -0.05em;
+      text-shadow:
+        2px 0 #000,-2px 0 #000,0 2px #000,0 -2px #000,
+        2px 2px #000,-2px 2px #000,-2px -2px #000,2px -2px #000;
+    }
+    /* Hotkey */
+    .hotkey-list {
+      list-style:none;
+      margin:0;
+      padding:0;
+      font-size:.75rem;
+      line-height:1.6;
+    }
+    .hotkey-list li{margin:0 0 .25rem 0;}
+  </style>
+</head>
+<body>
+  <h2 class="nes-text is-primary pixel-title">Recording&nbsp;Options</h2>
+
+  <form id="optionsForm" class="nes-container is-dark with-title" style="margin-top:1rem;">
+    <p class="title">Settings</p>
+
+    <!-- Resolution -->
+    <label for="resolution">Resolution:</label>
+    <div class="nes-field">
+      <select id="resolution" class="nes-select">
+        <option value="1080p">1080p</option>
+        <option value="720p">720p</option>
+        <option value="480p">480p</option>
+      </select>
+    </div>
+
+    <!-- System Audio -->
+    <label>
+      <input type="checkbox" id="audio" class="nes-checkbox is-dark" />
+      <span>Record&nbsp;System&nbsp;Audio</span>
+    </label>
+
+    <!-- Mic Audio -->
+    <label>
+      <input type="checkbox" id="micAudio" class="nes-checkbox is-dark" />
+      <span>Record&nbsp;Mic</span>
+    </label>
+
+    <!-- Formats -->
+    <label style="margin-top:1.25rem;">File&nbsp;Formats:</label>
+
+    <label>
+      <input type="checkbox" name="formats" value="mp4" class="nes-checkbox is-dark" checked />
+      <span>MP4</span>
+    </label>
+    <label>
+      <input type="checkbox" name="formats" value="avi" class="nes-checkbox is-dark" />
+      <span>AVI</span>
+    </label>
+    <label>
+      <input type="checkbox" name="formats" value="mkv" class="nes-checkbox is-dark" />
+      <span>MKV</span>
+    </label>
+    <label>
+      <input type="checkbox" name="formats" value="mov" class="nes-checkbox is-dark" />
+      <span>MOV</span>
+    </label>
+
+    <button type="submit" class="nes-btn is-primary">Save Options</button>
+  </form>
+
+  <!-- Hotkeys -->
+  <section class="nes-container is-dark with-title" style="margin-top:1.75rem;">
+    <p class="title">Hotkeys</p>
+    <ul class="hotkey-list">
+      <li>Ctrl&nbsp;+&nbsp;Shift&nbsp;+&nbsp;F — Open&nbsp;Popup</li>
+      <li>Ctrl&nbsp;+&nbsp;Shift&nbsp;+&nbsp;S — Start&nbsp;Recording</li>
+      <li>Ctrl&nbsp;+&nbsp;Shift&nbsp;+&nbsp;E — Stop&nbsp;Recording</li>
+    </ul>
+    <p style="font-size:.75rem;line-height:1.6;margin-top:.5rem;">
+      Edit:&nbsp;<a href="chrome://extensions/shortcuts" target="_blank">chrome://extensions/shortcuts</a>
+    </p>
+  </section>
+
+  <script src="options.js"></script>
+</body>
+</html>

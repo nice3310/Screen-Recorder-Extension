@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Screen Recorder</title>
+
+  <!-- Pixel-art style -->
+  <link rel="stylesheet" href="lib/nes.min.css" />
+
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: "Press Start 2P", monospace, sans-serif;
+      overflow: hidden;
+    }
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #212529;
+    }
+    .wrapper {
+      width: 100%;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    .wrapper > * { width: 100%; margin-top: .75rem; }
+    .wrapper > *:first-child { margin-top: 0; }
+  </style>
+</head>
+
+<body>
+  <section class="nes-container is-dark with-title wrapper">
+    <h3 class="title nes-text is-primary" style="margin-bottom:1rem;">Screen&nbsp;Recorder</h3>
+
+    <button id="startBtn" class="nes-btn is-success">Start Recording</button>
+    <button id="stopBtn"  class="nes-btn is-error" disabled>Stop Recording</button>
+    <button id="optionsBtn" class="nes-btn">Options</button>
+  </section>
+
+  <script src="lib/ffmpeg.min.js"></script>
+  <script src="lib/ffmpeg-core.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
