@@ -1,46 +1,55 @@
+/* ---------- 開 / 聚焦 popup ---------- */
 async function openOrFocusPopup() {
   const wins = await chrome.windows.getAll({ populate: true });
-  const popupWin = wins.find(
-    w =>
-      w.type === "popup" &&
-      w.tabs.some(t => t.url && t.url.endsWith("popup.html"))
+  const popup = wins.find(w =>
+    w.type === "popup" && w.tabs.some(t => t.url?.endsWith("popup.html"))
   );
-  const popupSize = { width: 340, height: 280 };
+  const size = { width: 340, height: 280 };
 
-  if (popupWin) {
-    await chrome.windows.update(popupWin.id, { focused: true, ...popupSize });
+  if (popup) {
+    await chrome.windows.update(popup.id, { focused: true, ...size });
   } else {
-    await chrome.windows.create({
-      url: "popup.html",
-      type: "popup",
-      ...popupSize
-    });
-    // Wait for the popup to finish loading
+    await chrome.windows.create({ url: "popup.html", type: "popup", ...size });
     await new Promise(r => setTimeout(r, 300));
   }
 }
 
-// Click the extension icon → Open/focus the popup
+/* ---------- browser-action ---------- */
 chrome.action.onClicked.addListener(openOrFocusPopup);
 
-// Process keyboard shortcuts
-chrome.commands.onCommand.addListener(async command => {
-  switch (command) {
-    case "open_popup":            // Ctrl+Shift+F
-      await openOrFocusPopup();
-      break;
+/* ---------- 快捷鍵 ---------- */
+chrome.commands.onCommand.addListener(async cmd => {
+  if (cmd === "open_popup")          openOrFocusPopup();
+  if (cmd === "start_recording") {   openOrFocusPopup(); chrome.runtime.sendMessage({ type: "startRecording" }); }
+  if (cmd === "stop_recording")  {   openOrFocusPopup(); chrome.runtime.sendMessage({ type: "stopRecording" }); }
+});
 
-    case "start_recording":       // Ctrl+Shift+S
-      await openOrFocusPopup();
-      chrome.runtime.sendMessage({ type: "startRecording" });
-      break;
+/* ---------- helper：確保 cat.js 注入並送訊息 ---------- */
+async function ensureCat(tabId) {
+  try { await chrome.scripting.executeScript({ target: { tabId }, files: ["cat.js"] }); }
+  catch {}
+}
+function sendCat(tabId, msg) {
+  chrome.tabs.sendMessage(tabId, msg, async () => {
+    if (chrome.runtime.lastError) { await ensureCat(tabId); chrome.tabs.sendMessage(tabId, msg, () => {}); }
+  });
+}
 
-    case "stop_recording":        // Ctrl+Shift+E
-      await openOrFocusPopup();
-      chrome.runtime.sendMessage({ type: "stopRecording" });
-      break;
+/* ---------- 中央訊息樞紐 ---------- */
+chrome.runtime.onMessage.addListener((msg) => {
+  /* popup 廣播 show / hide / duration */
+  if (msg.type === "broadcastShowCat" ||
+      msg.type === "broadcastHideCat" ||
+      msg.type === "broadcastDuration") {
 
-    default:
-      break;
+    const catMsg =
+      msg.type === "broadcastShowCat" ? { type: "showCat" } :
+      msg.type === "broadcastHideCat" ? { type: "hideCat" } :
+      { type: "updateDuration", seconds: msg.seconds };
+
+    chrome.tabs.query(
+      { url: ["http://*/*", "https://*/*", "file://*/*"] },
+      tabs => tabs.forEach(tab => sendCat(tab.id, catMsg))
+    );
   }
 });

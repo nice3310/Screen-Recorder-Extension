@@ -1,17 +1,28 @@
+/* ------------------------------------------------------------------
+ *  popup.html → script.js  (完整版本)
+ *  - Pixel Screen Recorder -
+ * ------------------------------------------------------------------ */
+
+/* ---------- DOM ---------- */
 const startBtn   = document.getElementById("startBtn");
 const stopBtn    = document.getElementById("stopBtn");
 const optionsBtn = document.getElementById("optionsBtn");
 
+/* ---------- 全域狀態 ---------- */
 let mediaRecorder;
 let recordedChunks = [];
-let stream;      
-let micStream;   
+let stream;          // 畫面
+let micStream;       // 麥克風
 let resolution;
-let recordAudio; 
-let micAudio;    
+let recordAudio;     // 系統音
+let micAudio;        // 麥克風音
 let formats;
 
-/* ---------- load user setting ---------- */
+/* 錄影時間 */
+let startTime   = 0;      // Date.now() 起點
+let durationTimer = null; // setInterval id
+
+/* ---------- 讀取使用者設定 ---------- */
 async function loadOptions() {
   return new Promise(resolve => {
     chrome.storage.sync.get(
@@ -29,16 +40,20 @@ async function loadOptions() {
   });
 }
 
-/* ---------- reset ---------- */
+/* ---------- 重設 ---------- */
 async function resetState() {
   if (mediaRecorder) mediaRecorder.stop();
-  if (stream)     stream.getTracks().forEach(t => t.stop());
-  if (micStream) micStream.getTracks().forEach(t => t.stop());
+  stream?.getTracks().forEach(t => t.stop());
+  micStream?.getTracks().forEach(t => t.stop());
 
   recordedChunks = [];
   mediaRecorder  = null;
   stream         = null;
   micStream      = null;
+
+  /* 停止計時器 */
+  clearInterval(durationTimer);
+  startTime = 0;
 
   startBtn.disabled = false;
   stopBtn.disabled  = true;
@@ -46,30 +61,35 @@ async function resetState() {
   await loadOptions();
 }
 
-/* ---------- initialization ---------- */
+/* ---------- 初始化 ---------- */
 loadOptions().then(resetState);
 
-/* ---------- receive message ---------- */
+/* ---------- 接收背景訊息 ---------- */
 chrome.runtime.onMessage.addListener(msg => {
-  if (msg.type === "optionsUpdated") {
-    loadOptions();
-  } else if (msg.type === "startRecording") {
-    startRecording();
-  } else if (msg.type === "stopRecording") {
-    stopRecording();
-  }
+  if (msg.type === "optionsUpdated") loadOptions();
+  if (msg.type === "startRecording") startRecording();
+  if (msg.type === "stopRecording")  stopRecording();
 });
 
-/* ---------- minimize popup ---------- */
+/* ---------- 廣播給 background → cat.js ---------- */
+function broadcast(kind, payload = {}) {
+  /* kind: "show" | "hide" | "duration" */
+  if (kind === "show")
+    chrome.runtime.sendMessage({ type: "broadcastShowCat" });
+  else if (kind === "hide")
+    chrome.runtime.sendMessage({ type: "broadcastHideCat" });
+  else if (kind === "duration")
+    chrome.runtime.sendMessage({ type: "broadcastDuration", seconds: payload.seconds });
+}
+
+/* ---------- 最小化 popup ---------- */
 function minimizePopup() {
   chrome.windows.getCurrent(win => {
-    if (win && win.type === "popup") {
-      chrome.windows.update(win.id, { state: "minimized" });
-    }
+    if (win?.type === "popup") chrome.windows.update(win.id, { state: "minimized" });
   });
 }
 
-/* ---------- animation ---------- */
+/* ---------- 3‒2‒1 倒數 ---------- */
 function showCountdown(cb) {
   const box = document.createElement("div");
   Object.assign(box.style, {
@@ -82,7 +102,7 @@ function showCountdown(cb) {
     background: "rgba(0,0,0,0.7)",
     borderRadius: "50%", zIndex: 10000,
     boxShadow: "0 0 20px rgba(0,0,0,0.5)",
-    animation: "zoomInOut 1s infinite"
+    animation: "zoom 1s infinite"
   });
   document.body.appendChild(box);
 
@@ -90,15 +110,12 @@ function showCountdown(cb) {
   box.textContent = n;
 
   const id = setInterval(() => {
-    n -= 1;
+    n--;
     if (n === 1) minimizePopup();
     if (n === 0) {
       clearInterval(id);
-      box.style.animation = "fade-out .5s";
-      setTimeout(() => {
-        document.body.removeChild(box);
-        cb();
-      }, 500);
+      box.style.animation = "fade 0.5s";
+      setTimeout(() => { document.body.removeChild(box); cb(); }, 500);
     } else {
       box.textContent = n;
     }
@@ -106,11 +123,8 @@ function showCountdown(cb) {
 
   const style = document.createElement("style");
   style.textContent = `
-    @keyframes fade-out { from { opacity:1 } to { opacity:0 } }
-    @keyframes zoomInOut {
-      0%,100%{ transform:translate(-50%,-50%) scale(1); }
-      50%    { transform:translate(-50%,-50%) scale(1.5); }
-    }`;
+    @keyframes fade { from{opacity:1} to{opacity:0} }
+    @keyframes zoom { 0%,100%{transform:translate(-50%,-50%) scale(1)} 50%{transform:translate(-50%,-50%) scale(1.5)} }`;
   document.head.appendChild(style);
 }
 
@@ -138,20 +152,19 @@ async function runFFmpeg(inName, outName, cmdStr, file) {
 startBtn.addEventListener("click", startRecording);
 stopBtn .addEventListener("click", stopRecording);
 optionsBtn.addEventListener("click", () => {
-  chrome.windows.create({
-    url: "options.html", type: "popup", width: 400, height: 600
-  });
+  chrome.windows.create({ url: "options.html", type: "popup", width: 400, height: 600 });
 });
 
-/* ---------- start recording ---------- */
+/* ---------- 開始錄影 ---------- */
 async function startRecording() {
   try {
     await resetState();
 
-    const curWin = await new Promise(r => chrome.windows.getCurrent(r));
-    await chrome.windows.update(curWin.id, { width: 800, height: 660 });
+    /* 放大 popup 方便列出權限提示 */
+    const pop = await new Promise(r => chrome.windows.getCurrent(r));
+    await chrome.windows.update(pop.id, { width: 800, height: 660 });
 
-    // screen stream
+    /* 取得螢幕流 */
     stream = await navigator.mediaDevices.getDisplayMedia({
       video: {
         mediaSource: "screen",
@@ -161,56 +174,70 @@ async function startRecording() {
       audio: recordAudio
     });
 
-    // mic setup
+    /* 麥克風流 */
     if (micAudio) {
       micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       micStream.getAudioTracks().forEach(t => stream.addTrack(t));
     }
 
-    // start recording
+    /* 建立 MediaRecorder */
     mediaRecorder = new MediaRecorder(stream);
     mediaRecorder.ondataavailable = e => e.data.size && recordedChunks.push(e.data);
 
-    /* ---------- end process ---------- */
+    /* 錄影結束後處理下載 */
     mediaRecorder.onstop = async () => {
+      clearInterval(durationTimer);               // 停止秒計
+      broadcast("hide");                          // 隱藏貓貓
+
       const webmBlob = new Blob(recordedChunks, { type: "video/webm" });
 
+      /* 命名 */
       const now = new Date();
-      const pad = n => String(n).padStart(2, "0");
-      const base =
-        `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-` +
-        `${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
-
+      const pad = v => String(v).padStart(2, "0");
+      const base = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}-${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
       const inName = `${base}.webm`;
 
-      if (!formats || formats.length === 0) formats = ["mp4"];
-
+      if (!formats?.length) formats = ["mp4"];
       for (const fmt of formats) {
         const outName = `${base}.${fmt}`;
         const cmd = `ffmpeg -i ${inName} -c:v copy -c:a aac ${outName}`;
         await runFFmpeg(inName, outName, cmd, webmBlob);
       }
+
       await resetState();
     };
 
-    await chrome.windows.update(curWin.id, { width: 340, height: 280 });
+    /* 縮回 popup 尺寸 */
+    await chrome.windows.update(pop.id, { width: 340, height: 280 });
+
+    /* 倒數開始 → 真正 start */
     showCountdown(() => {
       mediaRecorder.start();
+
+      /* >>> 開始秒計 & 廣播 <<< */
+      startTime = Date.now();
+      durationTimer = setInterval(() => {
+        const secs = Math.floor((Date.now() - startTime) / 1000);
+        broadcast("duration", { seconds: secs }); // push 給 cat.js
+      }, 1000);
+
+      broadcast("show");              // 顯示貓貓
       startBtn.disabled = true;
       stopBtn.disabled  = false;
     });
+
   } catch (err) {
     console.error("startRecording error:", err);
     await resetState();
   }
 }
 
-/* ---------- stop recording ---------- */
+/* ---------- 停止錄影 ---------- */
 function stopRecording() {
-  if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
+  if (mediaRecorder?.state !== "inactive") mediaRecorder.stop();
 }
 
-/* ---------- download ---------- */
+/* ---------- 下載 ---------- */
 function triggerDownload(blob, name) {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
