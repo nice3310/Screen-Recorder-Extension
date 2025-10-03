@@ -168,7 +168,7 @@ async function startRecording() {
     }
 
     // start recording
-    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=h264' });
     mediaRecorder.ondataavailable = e => e.data.size && recordedChunks.push(e.data);
 
     /* ---------- end process ---------- */
